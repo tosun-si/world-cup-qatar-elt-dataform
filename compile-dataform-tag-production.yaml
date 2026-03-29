@@ -1,0 +1,32 @@
+steps:
+  - id: compile-dataform
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    script: |
+      RESULT=$(gcloud dataform compilation-results create \
+        --repository=${DATAFORM_REPO_NAME} \
+        --project=$PROJECT_ID \
+        --region=$LOCATION \
+        --git-commitish=$TAG_NAME \
+        --format="value(name)")
+
+      echo "Compilation result for tag $TAG_NAME: $${RESULT}"
+      echo "$${RESULT}" > /workspace/compilation_result_name.txt
+    env:
+      - 'DATAFORM_REPO_NAME=$_DATAFORM_REPO_NAME'
+
+  - id: run-assertions
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    script: |
+      COMPILATION_RESULT=$(cat /workspace/compilation_result_name.txt)
+
+      gcloud dataform workflow-invocations create \
+        --repository=${DATAFORM_REPO_NAME} \
+        --project=$PROJECT_ID \
+        --region=$LOCATION \
+        --compilation-result="$${COMPILATION_RESULT}" \
+        --invocation-config-included-tags=assertions
+    env:
+      - 'DATAFORM_REPO_NAME=$_DATAFORM_REPO_NAME'
+
+substitutions:
+  _DATAFORM_REPO_NAME: world-cup-qatar-elt-dataform

@@ -1,0 +1,65 @@
+name: Compile Dataform - Production Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  WORKLOAD_IDENTITY_PROVIDER: 'projects/975119474255/locations/global/workloadIdentityPools/gb-github-actions-ci-cd-pool/providers/gb-github-actions-ci-cd-provider'
+  SA_CI_CD_EMAIL: 'sa-dataform-dev@gb-poc-373711.iam.gserviceaccount.com'
+  PROJECT_ID: 'gb-poc-373711'
+  REGION: 'europe-west1'
+  DATAFORM_REPO_NAME: 'world-cup-qatar-elt-dataform'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  compile-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SA_CI_CD_EMAIL }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Compile Dataform project
+        id: compile
+        run: |
+          RESULT=$(gcloud dataform compilation-results create \
+            --repository=${{ env.DATAFORM_REPO_NAME }} \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --git-commitish=${{ github.ref_name }} \
+            --format="value(name)")
+
+          echo "compilation_result_name=${RESULT}" >> "$GITHUB_OUTPUT"
+          echo "Compilation result: ${RESULT}"
+
+      - name: Run assertions
+        run: |
+          gcloud dataform workflow-invocations create \
+            --repository=${{ env.DATAFORM_REPO_NAME }} \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --compilation-result="${{ steps.compile.outputs.compilation_result_name }}" \
+            --invocation-config-included-tags=assertions
+
+      - name: Output compilation result name
+        run: |
+          echo "### Dataform Compilation Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tag:** \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Compilation result name:**" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.compile.outputs.compilation_result_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"

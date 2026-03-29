@@ -1,0 +1,14 @@
+[project]
+name = "world-cup-qatar-elt-dataform"
+version = "0.1.0"
+description = "ELT pipeline with Dataform for Qatar Fifa World Cup data, orchestrated by Airflow"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "apache-airflow[google]==3.1.8",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.0.2",
+]

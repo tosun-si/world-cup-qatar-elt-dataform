@@ -1,0 +1,49 @@
+import airflow
+from airflow.providers.google.cloud.operators.dataform import (
+    DataformCreateWorkflowInvocationOperator,
+)
+from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
+from airflow.providers.google.cloud.transfers.gcs_to_gcs import GCSToGCSOperator
+
+from world_cup_qatar_elt_dataform_dags.dag.settings import Settings
+
+settings = Settings()
+
+with airflow.DAG(
+        settings.dataform_dag_id,
+        default_args=settings.dag_default_args,
+        schedule=None) as dag:
+    load_team_stats_raw_to_bq = GCSToBigQueryOperator(
+        task_id='load_team_player_stats_raw_to_bq',
+        bucket=settings.team_stats_input_bucket,
+        source_objects=[settings.team_stats_source_object],
+        destination_project_dataset_table=f'{settings.project_id}.{settings.dataset}.{settings.team_stats_raw_table}',
+        source_format='NEWLINE_DELIMITED_JSON',
+        compression='NONE',
+        create_disposition=settings.variables['team_stats_raw_create_disposition'],
+        write_disposition=settings.variables['team_stats_raw_write_disposition'],
+        autodetect=False,
+        schema_object_bucket=settings.team_stats_raw_table_schema_bucket,
+        schema_object=settings.team_stats_raw_table_schema_object
+    )
+
+    invoke_dataform_workflow = DataformCreateWorkflowInvocationOperator(
+        task_id="invoke_dataform_workflow",
+        project_id=settings.project_id,
+        region=settings.location,
+        repository_id=settings.dataform_repository_id,
+        workflow_invocation={
+            "compilation_result": settings.dataform_compilation_result_name,
+        },
+    )
+
+    move_file_to_cold = GCSToGCSOperator(
+        task_id="move_file_to_cold",
+        source_bucket=settings.team_stats_input_bucket,
+        source_object=settings.team_stats_source_object,
+        destination_bucket=settings.team_stats_dest_bucket,
+        destination_object=settings.team_stats_dest_object,
+        move_object=True
+    )
+
+    load_team_stats_raw_to_bq >> invoke_dataform_workflow >> move_file_to_cold

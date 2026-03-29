@@ -1,0 +1,40 @@
+import os
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from airflow.models import Variable
+
+_variables = Variable.get("world_cup_qatar_elt_dataform_dags", deserialize_json=True)
+
+
+@dataclass
+class Settings:
+    dag_folder = os.getenv("DAGS_FOLDER")
+    dag_default_args = {
+        'depends_on_past': False,
+        'email': ['airflow@example.com'],
+        'email_on_failure': False,
+        'email_on_retry': False,
+        'retries': 0,
+        'retry_delay': timedelta(minutes=5),
+        "start_date": datetime(2024, 1, 1),
+    }
+    project_id = os.getenv("GCP_PROJECT")
+    location = os.getenv("COMPOSER_LOCATION")
+
+    dataform_dag_id = _variables["dataform_dag_id"]
+    dataset = _variables["dataset"]
+    team_stats_raw_table = _variables["team_stats_raw_table"]
+    team_stats_table = _variables["team_stats_table"]
+    team_stats_raw_table_schema_bucket = _variables["team_stats_raw_table_schema_bucket"]
+    team_stats_raw_table_schema_object = _variables["team_stats_raw_table_schema_object"]
+
+    team_stats_input_bucket = _variables["team_stats_input_bucket"]
+    team_stats_source_object = _variables["team_stats_source_object"]
+    team_stats_dest_bucket = _variables["team_stats_dest_bucket"]
+    team_stats_dest_object = _variables["team_stats_dest_object"]
+
+    dataform_repository_id = _variables["dataform_repository_id"]
+    dataform_compilation_result_name = _variables["dataform_compilation_result_name"]
+
+    variables = _variables
