@@ -1,6 +1,6 @@
 .git
-dist
 .idea
+.venv
 .envrc
 .gitignore
 *.iml

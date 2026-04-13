@@ -43,7 +43,7 @@ with airflow.DAG(
         source_object=settings.team_stats_source_object,
         destination_bucket=settings.team_stats_dest_bucket,
         destination_object=settings.team_stats_dest_object,
-        move_object=True
+        move_object=False
     )
 
     load_team_stats_raw_to_bq >> invoke_dataform_workflow >> move_file_to_cold

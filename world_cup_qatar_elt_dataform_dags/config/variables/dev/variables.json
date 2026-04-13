@@ -13,6 +13,6 @@
     "team_stats_raw_table_schema_object": "world_cup_team_stats/bq_schema/raw_bq_schema.json",
     "team_stats_table": "team_players_stat",
     "dataform_repository_id": "world-cup-qatar-elt-dataform",
-    "dataform_compilation_result_name": "projects/gb-poc-373711/locations/europe-west1/repositories/world-cup-qatar-elt-dataform/compilationResults/COMPILATION_RESULT_ID"
+    "dataform_compilation_result_name": "projects/gb-poc-373711/locations/europe-west1/repositories/world-cup-qatar-elt-dataform/compilationResults/256fb623-abe1-41c7-89ad-39d6413faf20"
   }
 }

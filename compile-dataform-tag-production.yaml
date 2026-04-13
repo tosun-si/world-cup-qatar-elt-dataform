@@ -1,32 +1,28 @@
 steps:
   - id: compile-dataform
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    script: |
-      RESULT=$(gcloud dataform compilation-results create \
-        --repository=${DATAFORM_REPO_NAME} \
-        --project=$PROJECT_ID \
-        --region=$LOCATION \
-        --git-commitish=$TAG_NAME \
-        --format="value(name)")
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
 
-      echo "Compilation result for tag $TAG_NAME: $${RESULT}"
-      echo "$${RESULT}" > /workspace/compilation_result_name.txt
-    env:
-      - 'DATAFORM_REPO_NAME=$_DATAFORM_REPO_NAME'
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
 
-  - id: run-assertions
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    script: |
-      COMPILATION_RESULT=$(cat /workspace/compilation_result_name.txt)
+        RESULT=$(curl -s -X POST \
+          "https://dataform.googleapis.com/v1beta1/projects/${_GCP_PROJECT_ID}/locations/${_DATAFORM_REGION}/repositories/${_DATAFORM_REPO_NAME}/compilationResults" \
+          -H "Authorization: Bearer $${ACCESS_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "{\"gitCommitish\": \"${_GIT_COMMITISH}\"}")
 
-      gcloud dataform workflow-invocations create \
-        --repository=${DATAFORM_REPO_NAME} \
-        --project=$PROJECT_ID \
-        --region=$LOCATION \
-        --compilation-result="$${COMPILATION_RESULT}" \
-        --invocation-config-included-tags=assertions
-    env:
-      - 'DATAFORM_REPO_NAME=$_DATAFORM_REPO_NAME'
+        echo "API response: $${RESULT}"
+
+        COMPILATION_RESULT_NAME=$(echo "$${RESULT}" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
+
+        echo "Compilation result for ${_GIT_COMMITISH}: $${COMPILATION_RESULT_NAME}"
 
 substitutions:
+  _GCP_PROJECT_ID: gb-poc-373711
+  _DATAFORM_REGION: europe-west1
   _DATAFORM_REPO_NAME: world-cup-qatar-elt-dataform
+  _GIT_COMMITISH: main

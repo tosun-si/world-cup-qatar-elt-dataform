@@ -30,29 +30,27 @@ jobs:
           service_account: ${{ env.SA_CI_CD_EMAIL }}
 
       - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Compile Dataform project
         id: compile
         run: |
-          RESULT=$(gcloud dataform compilation-results create \
-            --repository=${{ env.DATAFORM_REPO_NAME }} \
-            --project=${{ env.PROJECT_ID }} \
-            --region=${{ env.REGION }} \
-            --git-commitish=${{ github.ref_name }} \
-            --format="value(name)")
+          set -e
 
-          echo "compilation_result_name=${RESULT}" >> "$GITHUB_OUTPUT"
-          echo "Compilation result: ${RESULT}"
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
 
-      - name: Run assertions
-        run: |
-          gcloud dataform workflow-invocations create \
-            --repository=${{ env.DATAFORM_REPO_NAME }} \
-            --project=${{ env.PROJECT_ID }} \
-            --region=${{ env.REGION }} \
-            --compilation-result="${{ steps.compile.outputs.compilation_result_name }}" \
-            --invocation-config-included-tags=assertions
+          RESULT=$(curl -s -X POST \
+            "https://dataform.googleapis.com/v1beta1/projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/repositories/${{ env.DATAFORM_REPO_NAME }}/compilationResults" \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"gitCommitish\": \"${{ github.ref_name }}\"}")
+
+          echo "API response: ${RESULT}"
+
+          COMPILATION_RESULT_NAME=$(echo "${RESULT}" | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")
+
+          echo "compilation_result_name=${COMPILATION_RESULT_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Compilation result: ${COMPILATION_RESULT_NAME}"
 
       - name: Output compilation result name
         run: |

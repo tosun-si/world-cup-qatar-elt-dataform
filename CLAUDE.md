@@ -45,6 +45,31 @@ Dataform compilation is handled by GitHub Actions (not by the Airflow DAG), usin
 - Dataform core version: 3.0.8
 - DAG variables are stored in `config/variables/{env}/variables.json` and loaded via `airflow.models.Variable`
 
+## Local Airflow execution with Docker
+
+The DAG can be tested locally against real GCP resources using the Airflow Docker dev image from a separate project: [airflow-gcp-docker-dev](https://github.com/tosun-si/airflow-gcp-docker-dev).
+
+```bash
+# Build the image (from airflow-gcp-docker-dev directory)
+docker build -t airflow-dev .
+
+# Run (from this project's root directory)
+docker run -it \
+    -p 8080:8080 \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json \
+    -e GCP_PROJECT=gb-poc-373711 \
+    -e GOOGLE_CLOUD_PROJECT=gb-poc-373711 \
+    -e COMPOSER_LOCATION=europe-west1 \
+    -v $HOME/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json \
+    -v $(pwd)/world_cup_qatar_elt_dataform_dags:/opt/airflow/dags/world_cup_qatar_elt_dataform_dags \
+    -v $(pwd)/world_cup_qatar_elt_dataform_dags/config:/opt/airflow/config \
+    airflow-dev
+```
+
+- Requires `gcloud auth application-default login` beforehand
+- `GOOGLE_CLOUD_PROJECT` env var is needed for ADC credential project resolution
+- Airflow UI available at http://localhost:8080 (admin/admin)
+
 ## Commands
 
 ```bash

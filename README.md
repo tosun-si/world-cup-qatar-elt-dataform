@@ -72,6 +72,40 @@ gcloud dataform compilation-results list \
 uv sync
 ```
 
+## Local Airflow execution with Docker
+
+For local testing of the DAG against real GCP resources, use the Airflow Docker dev image from the [airflow-gcp-docker-dev](https://github.com/tosun-si/airflow-gcp-docker-dev) project.
+
+### Build the Docker image
+
+```bash
+cd /path/to/airflow-gcp-docker-dev
+docker build -t airflow-dev .
+```
+
+### Run the DAG locally
+
+From this project's root directory:
+
+```bash
+docker run -it \
+    -p 8080:8080 \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json \
+    -e GCP_PROJECT=gb-poc-373711 \
+    -e GOOGLE_CLOUD_PROJECT=gb-poc-373711 \
+    -e COMPOSER_LOCATION=europe-west1 \
+    -v $HOME/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json \
+    -v $(pwd)/world_cup_qatar_elt_dataform_dags:/opt/airflow/dags/world_cup_qatar_elt_dataform_dags \
+    -v $(pwd)/world_cup_qatar_elt_dataform_dags/config:/opt/airflow/config \
+    airflow-dev
+```
+
+Then access the Airflow UI at http://localhost:8080 (default credentials: `admin` / `admin`).
+
+Prerequisites:
+- Authenticate locally with `gcloud auth application-default login`
+- `GOOGLE_CLOUD_PROJECT` is required for the Google Cloud SDK to resolve the project from ADC credentials
+
 ## Create the Dataform repository with Terraform and synchronize with a GitHub repository
 
 The SSH public host key value must be in the format of a known_hosts file. The value must contain an algorithm and a public key encoded in the base64 format, but without the hostname or IP, in the following format:
