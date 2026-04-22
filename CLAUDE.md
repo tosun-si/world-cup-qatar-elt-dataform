@@ -85,4 +85,11 @@ gcloud dataform compilation-results list \
     --repository=world-cup-qatar-elt-dataform \
     --project=gb-poc-373711 \
     --region=europe-west1
+
+# Deploy the Airflow DAG folder and config variables to Cloud Composer
+gcloud builds submit \
+    --project=$PROJECT_ID \
+    --region=$LOCATION \
+    --config deploy-dag.yaml \
+    --substitutions _DAG_ROOT_FOLDER=$DAG_ROOT_FOLDER,_COMPOSER_ENVIRONMENT=$COMPOSER_ENVIRONMENT,_CONFIG_FOLDER_NAME=$CONFIG_FOLDER_NAME,_ENV=$ENV
 ```

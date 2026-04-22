@@ -24,6 +24,18 @@ The pipeline is orchestrated by an Airflow DAG (Cloud Composer) with the followi
 
 The DAG configuration is managed via Airflow Variables, loaded from `world_cup_qatar_elt_dataform_dags/config/variables/dev/variables.json`.
 
+## Deploy the Airflow DAG to Cloud Composer
+
+The DAG folder and its config variables are deployed to Cloud Composer via Cloud Build (`deploy-dag.yaml`):
+
+```bash
+gcloud builds submit \
+    --project=$PROJECT_ID \
+    --region=$LOCATION \
+    --config deploy-dag.yaml \
+    --substitutions _DAG_ROOT_FOLDER=$DAG_ROOT_FOLDER,_COMPOSER_ENVIRONMENT=$COMPOSER_ENVIRONMENT,_CONFIG_FOLDER_NAME=$CONFIG_FOLDER_NAME,_ENV=$ENV
+```
+
 ## CI/CD - Dataform compilation with GitHub Actions
 
 Dataform compilation is separated from the DAG and handled by GitHub Actions. This provides reproducibility, validation via assertions, and easy rollbacks.
