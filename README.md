@@ -42,7 +42,7 @@ Dataform compilation and releases are handled by GitHub Actions, not by the DAG.
 
 | Workflow | Trigger | Environment | What it does |
 |---|---|---|---|
-| `dataform-ci.yaml` | PR to `main` | `dev` | 1. Offline compilation with the Dataform CLI (no GCP access)<br>2. Compiles the PR head commit with `schemaSuffix: pr_<number>` and runs the whole pipeline, **assertions included**, in isolated datasets |
+| `dataform-ci.yaml` | PR to `main` | `dev` | 1. Offline compilation with the Dataform CLI (no GCP access)<br>2. Unit tests with the Dataform CLI (mocked inputs, no table created)<br>3. Compiles the PR head commit with `schemaSuffix: pr_<number>` and runs the whole pipeline, **assertions included**, in isolated datasets |
 | `dataform-pr-cleanup.yaml` | PR closed | `dev` | Deletes the `*_pr_<number>` datasets |
 | `dataform-release-dev.yaml` | Push to `main` | `dev` | Releases the commit to the `dev` release config |
 | `dataform-release-prd.yaml` | Tag `vX.Y.Z`, or manual run (rollback) | `prd` | Releases the tag to the `prd` release config |
@@ -84,6 +84,17 @@ gh workflow run dataform-release-prd.yaml -f tag=v1.2.0
 
 Assertions are executed at invocation time (not at compilation): in the PR pipeline, and in each Airflow run.
 
+### Unit tests
+
+`definitions/tests/` contains unit tests (`type: "test"`) of the staging model: the raw table is replaced by inline data and the output is compared with the expected rows. They test the SQL logic, whereas assertions test the data.
+
+Unit tests are only run by the Dataform CLI (not by workflow invocations). They run queries on BigQuery but create no table:
+
+```bash
+echo '{"projectId": "gb-poc-373711", "location": "europe-west1"}' > .df-credentials.json  # uses ADC, gitignored
+npx @dataform/cli@3.0.42 test
+```
+
 ### Setup
 
 Release and workflow configs are created by Terraform (`infra/world_cup_elt_dataform`). The `prd` workflow config fails until a first tag is released.
@@ -122,6 +133,7 @@ gcloud iam service-accounts add-iam-policy-binding sa-dataform-ci-prd@<project>.
 - roles of the CI/CD service accounts, predefined roles only:
   - `roles/dataform.admin` **on the Dataform repository** (Terraform, `google_dataform_repository_iam_member`): `roles/dataform.editor` can't update a release config (`dataform.releaseConfigs.update`), and the repository-level grant keeps the other repositories of the project out of reach
   - `roles/iam.serviceAccountUser` on the Dataform service account of the repository: Dataform checks `actAs` on invocations
+  - `dev` only: `roles/bigquery.jobUser`, to run the unit tests
   - `dev` only: `roles/bigquery.dataOwner` with an IAM condition restricting it to the PR datasets, to delete them:
 
 ```text

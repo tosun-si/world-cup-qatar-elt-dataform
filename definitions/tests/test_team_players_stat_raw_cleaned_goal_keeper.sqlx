@@ -1,0 +1,49 @@
+config {
+  type: "test",
+  dataset: "team_players_stat_raw_cleaned"
+}
+
+-- Goalkeeper: savePercentage is filled, so goalkeeper stats exist.
+-- Non-numeric stats are nulled by SAFE_CAST instead of failing the query.
+input "team_players_stat_raw" {
+  SELECT
+    "Argentina" AS nationality,
+    "0" AS goalsScored,
+    "0" AS assistsProvided,
+    "0.00" AS dribblesPerNinety,
+    "7" AS appearances,
+    "0.65" AS totalDuelsWonPerNinety,
+    "0.00" AS interceptionsPerNinety,
+    "N/A" AS tacklesPerNinety,
+    "Adidas" AS brandSponsorAndUsed,
+    "Aston Villa" AS club,
+    "46.67%" AS savePercentage,
+    2 AS fifaRanking,
+    "GK" AS position,
+    "Emiliano Martinez" AS playerName,
+    "43%" AS cleanSheets,
+    "Adidas" AS nationalTeamKitSponsor,
+    23 AS nationalTeamJerseyNumber,
+    "Sep 2, 1992" AS playerDob
+}
+
+SELECT
+  "Argentina" AS nationality,
+  0 AS goalsScored,
+  0 AS assistsProvided,
+  0.0 AS dribblesPerNinety,
+  7 AS appearances,
+  0.65 AS totalDuelsWonPerNinety,
+  0.0 AS interceptionsPerNinety,
+  CAST(NULL AS FLOAT64) AS tacklesPerNinety,
+  "Adidas" AS brandSponsorAndUsed,
+  "Aston Villa" AS club,
+  "46.67%" AS savePercentage,
+  TRUE AS isGoalKeeperStatsExist,
+  2 AS fifaRanking,
+  "GK" AS position,
+  "Emiliano Martinez" AS playerName,
+  "43%" AS cleanSheets,
+  "Adidas" AS nationalTeamKitSponsor,
+  23 AS nationalTeamJerseyNumber,
+  "Sep 2, 1992" AS playerDob
