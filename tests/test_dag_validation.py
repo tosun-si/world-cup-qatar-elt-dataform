@@ -54,6 +54,18 @@ def test_dag_task_dependencies():
     assert "move_file_to_cold" in [t.task_id for t in invoke_dataform.downstream_list]
 
 
+def test_dag_invokes_the_environment_workflow_config():
+    from world_cup_qatar_elt_dataform_dags.dag.world_cup_qatar_elt_dataform_dag import dag
+
+    invoke_dataform = dag.get_task("invoke_dataform_workflow")
+    assert invoke_dataform.workflow_invocation == {
+        "workflow_config": (
+            "projects/test-project/locations/europe-west1"
+            "/repositories/world-cup-qatar-elt-dataform/workflowConfigs/dev"
+        ),
+    }
+
+
 def test_dag_has_expected_task_count():
     from world_cup_qatar_elt_dataform_dags.dag.world_cup_qatar_elt_dataform_dag import dag
 

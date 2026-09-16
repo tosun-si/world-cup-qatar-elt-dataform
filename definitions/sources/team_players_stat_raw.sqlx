@@ -1,0 +1,5 @@
+config {
+  type: "declaration",
+  name: "team_players_stat_raw",
+  description: "Raw player stats loaded from GCS by the Airflow DAG."
+}

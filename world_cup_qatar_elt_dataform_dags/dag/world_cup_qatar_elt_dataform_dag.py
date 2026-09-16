@@ -33,7 +33,12 @@ with airflow.DAG(
         region=settings.location,
         repository_id=settings.dataform_repository_id,
         workflow_invocation={
-            "compilation_result": settings.dataform_compilation_result_name,
+            # Executes the compilation result currently released by CI/CD for this environment.
+            "workflow_config": (
+                f"projects/{settings.project_id}/locations/{settings.location}"
+                f"/repositories/{settings.dataform_repository_id}"
+                f"/workflowConfigs/{settings.dataform_workflow_config_id}"
+            ),
         },
     )
 

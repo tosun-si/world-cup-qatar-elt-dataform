@@ -4,6 +4,10 @@ config {
         goalsScored: "Goal scored for the player.",
         assistsProvided: "Assists provided by the player.",
         appearances: "Appearances for the player."
+    },
+    assertions: {
+        nonNull: ["nationality", "playerName"],
+        uniqueKey: ["nationality", "playerName"]
     }
 }
 
@@ -27,4 +31,4 @@ SELECT
     nationalTeamKitSponsor,
     nationalTeamJerseyNumber,
     playerDob
-from `qatar_fifa_world_cup_dataform.team_players_stat_raw`
+FROM ${ref("team_players_stat_raw")}

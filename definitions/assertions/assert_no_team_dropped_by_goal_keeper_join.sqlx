@@ -1,0 +1,10 @@
+config {
+  type: "assertion",
+  description: "Every team in staging must be present in the mart: the join on goalkeeper stats must not drop any team."
+}
+
+SELECT
+    staging.nationality
+FROM (SELECT DISTINCT nationality FROM ${ref("team_players_stat_raw_cleaned")}) staging
+LEFT JOIN ${ref("team_players_stat")} mart ON mart.teamName = staging.nationality
+WHERE mart.teamName IS NULL

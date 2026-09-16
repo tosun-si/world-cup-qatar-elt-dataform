@@ -9,6 +9,14 @@ config {
       granularity: "day"
     },
     clusterBy: ["teamName"]
+  },
+  assertions: {
+    uniqueKey: ["teamName"],
+    nonNull: ["teamName", "teamTotalGoals", "goalKeeper"],
+    rowConditions: [
+      "teamTotalGoals >= 0",
+      "fifaRanking BETWEEN 1 AND 211"
+    ]
   }
 }
 

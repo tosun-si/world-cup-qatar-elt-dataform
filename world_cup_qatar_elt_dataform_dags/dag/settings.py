@@ -25,7 +25,7 @@ class Settings:
     team_stats_dest_object: str = field(init=False)
 
     dataform_repository_id: str = field(init=False)
-    dataform_compilation_result_name: str = field(init=False)
+    dataform_workflow_config_id: str = field(init=False)
 
     variables: dict = field(init=False)
 
@@ -58,6 +58,6 @@ class Settings:
         self.team_stats_dest_object = variables["team_stats_dest_object"]
 
         self.dataform_repository_id = variables["dataform_repository_id"]
-        self.dataform_compilation_result_name = variables["dataform_compilation_result_name"]
+        self.dataform_workflow_config_id = variables["dataform_workflow_config_id"]
 
         self.variables = variables
