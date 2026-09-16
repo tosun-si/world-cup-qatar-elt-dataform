@@ -1,0 +1,54 @@
+name: Dataform release - prd
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  # Rollback: re-release a previous tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v1.2.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: dataform-release-prd
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release tag to the prd release config
+    runs-on: ubuntu-latest
+    environment: prd
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      DATAFORM_REPOSITORY: ${{ vars.DATAFORM_REPOSITORY }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Check the tag format
+        run: |
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid tag '${TAG}', expected vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.CI_CD_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Compile and release
+        run: ./scripts/dataform/release.sh prd "${TAG}"

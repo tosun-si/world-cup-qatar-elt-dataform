@@ -1,0 +1,44 @@
+name: Dataform release - dev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'definitions/**'
+      - 'includes/**'
+      - 'workflow_settings.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: dataform-release-dev
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release main to the dev release config
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      DATAFORM_REPOSITORY: ${{ vars.DATAFORM_REPOSITORY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.CI_CD_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      # The commit SHA is pinned rather than `main`, so the release is exactly the tested commit.
+      - name: Compile and release
+        run: ./scripts/dataform/release.sh dev "${GITHUB_SHA}"
