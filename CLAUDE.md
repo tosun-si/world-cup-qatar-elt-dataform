@@ -17,14 +17,14 @@ ELT pipeline for Qatar Fifa World Cup player statistics using Dataform, BigQuery
 ## CI/CD strategy
 
 Dataform compilation and releases are handled by GitHub Actions (not by the Airflow DAG), with Workload Identity Federation and one GitHub Environment (`dev`, `prd`) per GCP environment. Identifiers come from GitHub Variables (`vars.*`). The logic lives in `scripts/dataform/` (Dataform REST API v1):
-- **PR** (`.github/workflows/dataform-ci.yaml`): offline compilation with the Dataform CLI, then compilation of the PR head SHA with `schemaSuffix: pr_<number>` and a full workflow invocation (assertions included) in isolated datasets
+- **PR** (`.github/workflows/dataform-ci.yaml`): offline compilation with the Dataform CLI, unit tests (`dataform test`, `definitions/tests/`), then compilation of the PR head SHA with `schemaSuffix: pr_<number>` and a full workflow invocation (assertions included) in isolated datasets
 - **PR closed** (`.github/workflows/dataform-pr-cleanup.yaml`): deletes the `*_pr_<number>` datasets
 - **Push to main** (`.github/workflows/dataform-release-dev.yaml`): releases the commit to the `dev` release config
 - **Tag `vX.Y.Z`** (`.github/workflows/dataform-release-prd.yaml`): releases the tag to the `prd` release config; manual run with a previous tag = rollback
 - A release = PATCH release config `gitCommitish` → compile from the release config (fail on `compilationErrors`) → PATCH `releaseCompilationResult`
 - Release configs and workflow configs (`dev`, `prd`, no cron) are managed by Terraform; CI/CD owns `gitCommitish` and `releaseCompilationResult`
 - The DAG invokes the workflow config of its environment (`dataform_workflow_config_id` in `variables.json`)
-- Assertions run at invocation time only, never at compilation
+- Assertions (data quality, real data) run at invocation time only, never at compilation; unit tests (SQL logic, mocked inputs) only run with the CLI
 
 ## DAG pipeline flow
 
@@ -87,6 +87,9 @@ uv run pytest
 
 # Compile Dataform locally (offline)
 npx @dataform/cli@3.0.42 compile
+
+# Run the Dataform unit tests (needs a gitignored .df-credentials.json with projectId/location, uses ADC)
+npx @dataform/cli@3.0.42 test
 
 # Release / rollback prd (Console: BigQuery > Dataform > repository > Release & scheduling tab)
 gh workflow run dataform-release-prd.yaml -f tag=vX.Y.Z

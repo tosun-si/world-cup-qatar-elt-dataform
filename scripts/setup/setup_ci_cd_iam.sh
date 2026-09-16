@@ -84,7 +84,14 @@ for env in dev prd; do
   echo "GitHub environment ${env} can impersonate ${sa_email}"
 done
 
-echo "### 4. Deletion of the PR datasets (dev only)"
+echo "### 4. BigQuery jobs for the unit tests (dev only)"
+# Unit tests only run queries on inline data: no dataset access is needed.
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:sa-dataform-ci-dev@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/bigquery.jobUser" --condition=None --quiet >/dev/null
+echo "Granted roles/bigquery.jobUser to sa-dataform-ci-dev"
+
+echo "### 5. Deletion of the PR datasets (dev only)"
 # Predefined role, restricted by an IAM condition to the datasets created for the PRs.
 condition_file=$(mktemp)
 trap 'rm -f "${condition_file}"' EXIT
